@@ -1,0 +1,24 @@
+# Ignore build outputs
+
+[Bb]in/
+
+[Oo]bj/
+
+
+# Ignore Visual Studio files
+
+*.suo
+
+*.user
+
+*.rsuser
+
+*.vs/
+
+
+# Ignore .NET user-specific files
+
+*.dll
+
+*.pdb
+

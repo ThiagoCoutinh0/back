@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de IMC</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .calculator {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    .calculator input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .calculator button {
+      padding: 10px 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="calculator">
+  <h1>Calculadora de IMC</h1>
+  <label for="weight">Peso (kg):</label>
+  <input type="number" id="weight" placeholder="Informe o peso em kg"><br>
+
+  <label for="height">Altura (cm):</label>
+  <input type="number" id="height" placeholder="Informe a altura em cm"><br>
+
+  <button onclick="calculateIMC()">Calcular IMC</button>
+
+  <div id="result"></div>
+</div>
+
+<script>
+  async function calculateIMC() {
+    const weight = parseFloat(document.getElementById('weight').value);
+    const height = parseFloat(document.getElementById('height').value) / 100; // Convertendo altura para metros
+
+    if (isNaN(weight) || isNaN(height) || weight <= 0 || height <= 0) {
+      alert('Por favor, informe um peso e altura válidos.');
+      return;
+    }
+
+    const imc = weight / (height * height);
+
+    fetch(`https://localhost:7209/Receita/${imc}`)
+    .then(response => {
+        if (!response.ok) {
+          throw new Error('Erro na requisição');
+        }
+        return response.json();
+    })
+    .then(data => {
+      console.log(data);
+      document.getElementById('result').innerHTML = data.nomeReceita;
+    })
+    .catch(error => {
+      console.error('Erro:', error);
+    });
+  }
+</script>
+
+</body>
+</html>

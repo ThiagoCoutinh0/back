@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Receitas</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center">Gerenciador de Receitas</h1>
+
+        <!-- Calcular IMC e Sugerir Receita -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Sugerir Receita com base no IMC</h5>
+                <div class="form-group">
+                    <label for="inputPeso">Peso (kg)</label>
+                    <input type="number" class="form-control" id="inputPeso" placeholder="Insira seu peso">
+                </div>
+                <div class="form-group">
+                    <label for="inputAltura">Altura (m)</label>
+                    <input type="number" class="form-control" id="inputAltura" placeholder="Insira sua altura">
+                </div>
+                <button class="btn btn-primary" onclick="sugerirReceita()">Sugerir Receita</button>
+                <div class="mt-3" id="resultadoReceita"></div>
+            </div>
+        </div>
+
+        <!-- Listagem de Receitas -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Lista de Receitas</h5>
+                <button class="btn btn-success mb-3" onclick="listarReceitas()">Atualizar Lista</button>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Tipo</th>
+                            <th>Ingredientes</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaReceitas">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Formulário para Inserir/Editar Receita -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Inserir/Editar Receita</h5>
+                <div class="form-group">
+                    <label for="receitaId">ID da Receita</label>
+                    <input type="text" class="form-control" id="receitaId" disabled>
+                </div>
+                <div class="form-group">
+                    <label for="nomeReceita">Nome da Receita</label>
+                    <input type="text" class="form-control" id="nomeReceita">
+                </div>
+                <div class="form-group">
+                    <label for="tipoReceita">Tipo</label>
+                    <select class="form-control" id="tipoReceita">
+                        <option value="Normal">Normal</option>
+                        <option value="Fit">Fit</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ingredientesReceita">Ingredientes</label>
+                    <textarea class="form-control" id="ingredientesReceita"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="salvarReceita()">Salvar Receita</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiBaseUrl = "https://localhost:7209";  // Atualize a URL da sua API
+
+        // Função para calcular o IMC e sugerir receita
+        function sugerirReceita() {
+            const peso = parseFloat(document.getElementById('inputPeso').value);
+            const altura = parseFloat(document.getElementById('inputAltura').value);
+
+            if (!peso || !altura) {
+                alert("Insira peso e altura válidos.");
+                return;
+            }
+
+            const imc = peso / (altura * altura);
+
+            fetch(`${apiBaseUrl}/Receita/Sugerir/${imc}`)
+                .then(response => response.json())
+                .then(receita => {
+                    document.getElementById('resultadoReceita').innerHTML = `
+                        <h5>Receita Sugerida:</h5>
+                        <p><strong>ID:</strong> ${receita.receitaId}</p>
+                        <p><strong>Nome:</strong> ${receita.nomeReceita}</p>
+                        <p><strong>Tipo:</strong> ${receita.tipo}</p>
+                        <p><strong>Ingredientes:</strong> ${receita.ingredientes}</p>
+                    `;
+                })
+                .catch(error => console.error('Erro:', error));
+        }
+
+        // Função para listar todas as receitas
+        function listarReceitas() {
+            fetch(`${apiBaseUrl}/Receita`)
+                .then(response => response.json())
+                .then(receitas => {
+                    const lista = document.getElementById('listaReceitas');
+                    lista.innerHTML = '';
+
+                    receitas.forEach(receita => {
+                        lista.innerHTML += `
+                            <tr>
+                                <td>${receita.receitaId}</td>
+                                <td>${receita.nomeReceita}</td>
+                                <td>${receita.tipo}</td>
+                                <td>${receita.ingredientes}</td>
+                                <td>
+                                    <button class="btn btn-info" onclick="editarReceita(${receita.receitaId})">Editar</button>
+                                    <button class="btn btn-danger" onclick="excluirReceita(${receita.receitaId})">Excluir</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                })
+                .catch(error => console.error('Erro:', error));
+        }
+
+        // Função para salvar (inserir ou editar) receita
+        function salvarReceita() {
+            const nomeReceita = document.getElementById('nomeReceita').value;
+            const tipoReceita = document.getElementById('tipoReceita').value;
+            const ingredientesReceita = document.getElementById('ingredientesReceita').value;
+            const receitaId = document.getElementById('receitaId').value;
+
+            const receita = {
+                NomeReceita: nomeReceita,
+                Tipo: tipoReceita,
+                Ingredientes: ingredientesReceita
+            };
+
+            if (receitaId) {
+                // Editar receita existente
+                fetch(`${apiBaseUrl}/Receita/${receitaId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(receita)
+                })
+                .then(() => {
+                    alert('Receita atualizada com sucesso!');
+                    listarReceitas();
+                    limparFormulario();
+                })
+                .catch(error => console.error('Erro:', error));
+            } else {
+                // Inserir nova receita
+                fetch(`${apiBaseUrl}/Receita`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(receita)
+                })
+                .then(() => {
+                    alert('Receita inserida com sucesso!');
+                    listarReceitas();
+                    limparFormulario();
+                })
+                .catch(error => console.error('Erro:', error));
+            }
+        }
+
+        // Função para editar receita
+        function editarReceita(id) {
+            fetch(`${apiBaseUrl}/Receita/Editar/${id}`)
+                .then(response => response.json())
+                .then(receita => {
+                    document.getElementById('receitaId').value = receita.receitaId;
+                    document.getElementById('nomeReceita').value = receita.nomeReceita;
+                    document.getElementById('tipoReceita').value = receita.tipo;
+                    document.getElementById('ingredientesReceita').value = receita.ingredientes;
+                })
+                .catch(error => console.error('Erro:', error));
+        }
+
+        // Função para excluir receita
+        function excluirReceita(id) {
+            if (confirm('Tem certeza que deseja excluir essa receita?')) {
+                fetch(`${apiBaseUrl}/Receita/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(() => {
+                    alert('Receita excluída com sucesso!');
+                    listarReceitas();
+                })
+                .catch(error => console.error('Erro:', error));
+            }
+        }
+
+        // Limpar formulário
+        function limparFormulario() {
+            document.getElementById('receitaId').value = '';
+            document.getElementById('nomeReceita').value = '';
+            document.getElementById('tipoReceita').value = 'Normal';
+            document.getElementById('ingredientesReceita').value = '';
+        }
+
+        // Carregar lista de receitas ao carregar a página
+        window.onload = listarReceitas;
+    </script>
+</body>
+</html>
